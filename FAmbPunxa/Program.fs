@@ -6,15 +6,17 @@ open Objects
 let _top = Console.CursorTop
 let _left = Console.CursorLeft
 let pc = {x=10;y=10;g='@'}
-let cursor = {x=0;y=21;g='_'}
 
-let CreateMap =
-    let baseTile = {x=0;y=0;g='#'}
-    let top = [0..20] |> List.map (fun p -> {baseTile with x=p})
-    let left = [0..20] |> List.map (fun p -> {baseTile with y=p})
-    let bottom = [0..20] |> List.map (fun p -> {baseTile with x=p; y=20})
-    let right = [0..20] |> List.map (fun p -> {baseTile with y=p; x=20})
-    List.concat [top ;left ;bottom ;right]
+let CreateTile size x y =
+    let wall = {x=x ; y=y; g='#'}
+    let floor = {x=x ; y=y; g=' '}
+    match x, y with
+    | 0, _  | _, 0 -> wall
+    | x, y when x=size-1 || y=size-1  -> wall
+    | _, _ -> floor
+
+let CreateMap size =
+    Array2D.init size size (fun x y -> CreateTile size x y)
 
 let ShowObject {x = x;y = y;g = g} = 
     let top = _top + x
@@ -25,20 +27,18 @@ let ShowObject {x = x;y = y;g = g} =
 let MainLoop pc = 
     let rec loop pc=
         ShowObject pc
-        ShowObject cursor
         let key_info = Console.ReadKey()
         match key_info.Key with
         | ConsoleKey.UpArrow -> ShowObject {pc with g=' '};loop {pc with y=pc.y-1}
         | ConsoleKey.DownArrow -> ShowObject {pc with g=' '};loop {pc with y=pc.y+1}
         | ConsoleKey.LeftArrow -> ShowObject {pc with g=' '};loop {pc with x=pc.x-1}
         | ConsoleKey.RightArrow -> ShowObject {pc with g=' '};loop {pc with x=pc.x+1}
-        | _ -> ignore
+        | _ -> 0
     loop pc
 
 [<EntryPoint>]
 let main argv =
-    //printfn "Hello World from F#!"
     Console.Clear()
-    CreateMap |> List.forall (fun x -> ShowObject x; true) |> ignore
+    Console.CursorVisible <- false;
+    CreateMap 20 |> Array2D.iter (fun x -> ShowObject x)
     MainLoop pc
-    0 // return an integer exit code
