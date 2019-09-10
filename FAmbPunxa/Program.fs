@@ -17,7 +17,7 @@ let CreateMap size =
     Array2D.init size size (fun x y -> CreateTile size x y)
 
 let CreateWorld size = 
-    {screen = CreateMap size; actors = {x=10; y=10; c='@'}}
+    {screen = CreateMap size; actors = [{x=10; y=10; c='@'};{x=5;y=5;c='g'}]}
 
 let ShowObject {x = x;y = y;c = c} = 
     let top = _top + x
@@ -39,16 +39,19 @@ let CollisionDetector {x=_;y=_;c=what} where oldposition =
     | _ -> where
 
 //[{x=x;y=y;c=c}::rest]
-let Move {screen=screen;actors={x=x;y=y;c=c}} direction = 
-    let newx,newy = DirectionalMovement (x,y) direction
-    let what = screen.[newx, newy]
-    let updatedx, updatedy = CollisionDetector what (newx,newy) (x,y)
-    {screen=screen; actors= {x=updatedx;y=updatedy;c=c}}
+let Move {screen=screen; actors=actors} direction = 
+    match actors with
+    | {x=x;y=y;c=c}::rest ->
+        let newx,newy = DirectionalMovement (x,y) direction
+        let what = screen.[newx,newy]
+        let updatedx, updatedy = CollisionDetector what (newx,newy) (x,y)
+        {screen=screen; actors=rest @ [{x=updatedx;y=updatedy;c=c}]}
+    | _ -> {screen=screen;actors=actors}
 
 let MainLoop world = 
     let rec loop world=
         world.screen |> Array2D.iter (fun x -> ShowObject x)
-        ShowObject world.actors
+        world.actors |> List.map ShowObject |> ignore
         let Mover = Move world
         let key_info = Console.ReadKey()
         match key_info.Key with
